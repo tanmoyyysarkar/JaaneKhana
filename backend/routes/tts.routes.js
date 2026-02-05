@@ -1,18 +1,18 @@
 import express from "express";
-import { elevenLabsTTS } from "../services/eleven.service.js";
+import { generateTTS } from "../services/tts.service.js";
 const router = express.Router();
 
 // POST /api/tts
 // body: { text: string, filename?: string }
 router.post("/api/tts", async (req, res) => {
   try {
-    const { text, filename } = req.body || {};
+    const { text, filename, lang } = req.body || {};
     if (!text || typeof text !== "string") {
       return res.status(400).json({ error: "Missing text in request body" });
     }
 
     const name = filename && typeof filename === "string" ? filename : `tts_${Date.now()}.mp3`;
-    const filePath = await elevenLabsTTS(text, name);
+    const filePath = await generateTTS(text, name, lang);
 
     // construct public URL assuming server runs on localhost:3000
     const host = req.get("host") || "localhost:3000";
@@ -27,3 +27,4 @@ router.post("/api/tts", async (req, res) => {
 });
 
 export default router;
+

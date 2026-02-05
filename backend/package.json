@@ -20,13 +20,12 @@
     "dev": "node --watch server.js"
   },
   "dependencies": {
-    "@elevenlabs/elevenlabs-js": "^2.34.0",
     "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
+    "edge-tts": "^1.0.1",
     "express": "^5.2.1",
     "multer": "^2.0.2",
-    "node-fetch": "^3.3.2",
     "telegraf": "^4.16.3",
     "wavefile": "^11.0.0"
   }

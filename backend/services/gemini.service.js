@@ -8,6 +8,20 @@ const { WaveFile } = pkg;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+const LANGUAGE_NAMES = {
+  en: "English",
+  hi: "Hindi",
+  bn: "Bengali",
+  as: "Assamese",
+  ta: "Tamil",
+};
+
+function normalizeLang(lang) {
+  if (!lang || typeof lang !== "string") return "en";
+  const code = lang.trim().toLowerCase();
+  return LANGUAGE_NAMES[code] ? code : "en";
+}
+
 /**
  * STEP 1
  * Extract structured food ingredient data from image
@@ -68,11 +82,25 @@ Use only information visible in the image.
  * STEP 2
  * Generate human-readable explanation from extracted food data
  */
-export async function getDetailsFromData(foodJson, attempt = 1) {
+export async function getDetailsFromData(foodJson, lang = "en", attempt = 1) {
+  // Back-compat: older calls passed (foodJson, attempt)
+  if (typeof lang === "number") {
+    attempt = lang;
+    lang = "en";
+  }
+
+  const langCode = normalizeLang(lang);
+  const languageName = LANGUAGE_NAMES[langCode] || "English";
+
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: `
 You are JaaneKhana. Give CONCISE but DETAILED food ingredient analysis in PARAGRAPH format for smooth text-to-speech reading.
+
+OUTPUT LANGUAGE:
+- Write the entire response in ${languageName}.
+- Use the native script for ${languageName} (do not transliterate to Latin/English letters).
+- Do not mix languages.
 
 RULES:
 - NO introductions or greetings
@@ -89,7 +117,8 @@ RULES:
   });
 
   const prompt = `
-Analyze this food product in PARAGRAPH format (no bullets) for TTS reading:
+Analyze this food product in PARAGRAPH format (no bullets) for TTS reading.
+Write in ${languageName} only.
 
 Paragraph 1: State the product name, then describe the main concerning ingredients and what they are.
 

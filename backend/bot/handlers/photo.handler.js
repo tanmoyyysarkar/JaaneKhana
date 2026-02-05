@@ -8,6 +8,7 @@ import {
 import {
   extractPrescription,
   getDetailsFromData,
+  generateSpeechFromText,
 } from "../../services/gemini.service.js";
 import { elevenLabsTTS } from "../../services/eleven.service.js";
 import {
@@ -67,7 +68,7 @@ async function processPrescription(ctx) {
     const prescriptionData = await extractPrescription(imagePath);
 
     // 3. Generate medical explanation (text)
-    const medicalAdvice = await getDetailsFromData(prescriptionData);
+    const medicalAdvice = await getDetailsFromData(prescriptionData, lang);
 
     // 4. Send text response
     await ctx.reply(
@@ -77,7 +78,15 @@ async function processPrescription(ctx) {
 
     // 5. Generate voice using ElevenLabs (stable)
     await ctx.sendChatAction("record_voice");
-    audioPath = await elevenLabsTTS(medicalAdvice);
+    try {
+      audioPath = await elevenLabsTTS(medicalAdvice, "advice.mp3", lang);
+    } catch (ttsErr) {
+      console.warn("ElevenLabs TTS failed, falling back to Gemini TTS:", ttsErr);
+      audioPath = await generateSpeechFromText(
+        medicalAdvice,
+        `advice_${Date.now()}.wav`
+      );
+    }
 
     // 6. Send audio
     await ctx.replyWithAudio(

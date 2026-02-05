@@ -4,6 +4,7 @@ const LANGUAGES = {
     en: "English",
     hi: "हिन्दी",
     bn: "বাংলা",
+    as: "অসমীয়া",
     ta: "தமிழ்",
 };
 

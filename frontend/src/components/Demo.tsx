@@ -9,7 +9,7 @@ export default function Demo() {
               {/* Mobile phone frame */}
               <div className="bg-black rounded-3xl shadow-2xl overflow-hidden border-8 border-black" style={{aspectRatio: '9/19'}}>
                 {/* Notch */}
-                <div className="absolute mt-3 left-1/2 transform -translate-x-1/2 bg-black rounded-full w-36 h-8 z-20"></div>
+                {/* <div className="absolute mt-3 left-1/2 transform -translate-x-1/2 bg-black rounded-full w-36 h-8 z-20"></div> */}
                 
                 {/* Screen content */}
                 <div className="bg-white w-full h-full overflow-hidden">

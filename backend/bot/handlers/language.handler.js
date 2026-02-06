@@ -1,3 +1,4 @@
+import { startProfileWizard } from "./profile.handler.js";
 // bot/handlers/language.handler.js
 
 const LANGUAGES = {
@@ -40,10 +41,8 @@ const registerLanguageHandler = (bot) => {
     });
 
     // Handle inline keyboard selection
-    bot.on("callback_query", async (ctx) => {
-        const data = ctx.callbackQuery?.data;
-        if (!data || !data.startsWith("lang_")) return;
-
+    bot.action(/^lang_/, async (ctx) => {
+        const data = ctx.callbackQuery.data;
         const langCode = data.replace("lang_", "");
         const userId = ctx.from.id;
 
@@ -56,8 +55,10 @@ const registerLanguageHandler = (bot) => {
 
         await ctx.answerCbQuery();
         await ctx.editMessageText(
-            `Language set to: ${LANGUAGES[langCode]}\n\nSend a prescription image to continue.`
+            `Language set to: ${LANGUAGES[langCode]}\n\nLet's set up your health profile.`
         );
+
+        await startProfileWizard(ctx);
     });
 }
 

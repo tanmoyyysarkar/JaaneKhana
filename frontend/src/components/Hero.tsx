@@ -1,5 +1,7 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion"
-import { useRef } from "react"
+import { useRef, useState } from "react"
+import Model from "@/components/ui/Model"
+import DragDropDemo from "@/components/ui/Try"
 
 const springConfig = { stiffness: 100, damping: 30, restDelta: 0.001 }
 
@@ -24,6 +26,10 @@ export default function Hero() {
 
   const rawOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0])
   const opacity = useSpring(rawOpacity, springConfig)
+
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const openTryNow = () => setIsModalOpen(true)
+  const closeTryNow = () => setIsModalOpen(false)
 
   return (
     <section
@@ -115,6 +121,7 @@ export default function Hero() {
               className="flex flex-wrap gap-3 pt-2"
             >
               <motion.button
+                onClick={openTryNow}
                 className="bg-black text-lime-400 px-6 py-3 rounded-full font-bold text-sm tracking-wide flex items-center gap-2 group relative overflow-hidden hover:bg-gray-900"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -205,6 +212,11 @@ export default function Hero() {
         </div>
 
       </div>
+
+      {/* Try Now Modal */}
+      <Model isOpen={isModalOpen} onClose={closeTryNow}>
+        <DragDropDemo />
+      </Model>
     </section>
   )
 }

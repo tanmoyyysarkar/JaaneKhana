@@ -1,6 +1,25 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { CloudUpload, File, X, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+interface UserProfile {
+  conditions: string[];
+  allergies: string[];
+  diet: string;
+  goal: string;
+}
+
+interface Option {
+  label: string;
+  value: string;
+}
+
+interface ProfileOptions {
+  conditions: Option[];
+  allergies: Option[];
+  diets: Option[];
+  goals: Option[];
+}
 
 export default function DragDropDemo() {
   const [dragActive, setDragActive] = useState(false);
@@ -10,6 +29,56 @@ export default function DragDropDemo() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Profile options from backend
+  const [profileOptions, setProfileOptions] = useState<ProfileOptions>({
+    conditions: [],
+    allergies: [],
+    diets: [],
+    goals: [],
+  });
+
+  // Profile state
+  const [profile, setProfile] = useState<UserProfile>({
+    conditions: [],
+    allergies: [],
+    diet: '',
+    goal: '',
+  });
+
+  // Fetch profile options from backend on mount
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/api/profile/options');
+        if (response.ok) {
+          const data = await response.json();
+          setProfileOptions(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile options:', error);
+      }
+    };
+    fetchOptions();
+  }, []);
+
+  const toggleCondition = (value: string) => {
+    setProfile(prev => ({
+      ...prev,
+      conditions: prev.conditions.includes(value)
+        ? prev.conditions.filter(c => c !== value)
+        : [...prev.conditions, value]
+    }));
+  };
+
+  const toggleAllergy = (value: string) => {
+    setProfile(prev => ({
+      ...prev,
+      allergies: prev.allergies.includes(value)
+        ? prev.allergies.filter(a => a !== value)
+        : [...prev.allergies, value]
+    }));
+  };
 
   const handleDrag = (e: React.DragEvent) => { e.preventDefault();
     e.stopPropagation();
@@ -54,6 +123,7 @@ export default function DragDropDemo() {
     console.log('handleSubmitAnalysis called');
     console.log('Files array:', files);
     console.log('Files length:', files.length);
+    console.log('Profile:', profile);
 
     if (files.length === 0) {
       alert("Please upload at least one file!");
@@ -68,6 +138,7 @@ export default function DragDropDemo() {
       // Create FormData and append the first image
       const formData = new FormData();
       formData.append('imagePath', files[0]);
+      formData.append('profile', JSON.stringify(profile));
 
       // Log FormData contents
       console.log('FormData contents:');
@@ -130,33 +201,36 @@ export default function DragDropDemo() {
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
       <h2 className="text-2xl font-bold mb-6 text-black text-center">Upload Food Label</h2>
 
-      <div
-        className={`relative flex flex-col items-center justify-center w-full min-h-[300px] p-8 border-2 border-dashed rounded-xl transition-all duration-200 ease-in-out ${dragActive
-          ? "border-green-500 bg-black scale-[1.01]"
-          : "border-gray-300 bg-[#f4fde3] hover:bg-[#edfecd]"
-          }`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={handleChange}
-          accept="image/*,application/pdf"
-        />
-
-        <div className="flex flex-col items-center text-center space-y-4 pointer-events-none">
-          <div className={`p-4 rounded-full transition-colors ${dragActive ? 'bg-green-300' : 'bg-white shadow-sm'}`}>
-            <CloudUpload
-              className={`w-12 h-12 ${dragActive ? 'text-blue-600' : 'text-gray-400'}`}
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Left side - Upload Box */}
+        <div className="flex-1">
+          <div
+            className={`relative flex flex-col items-center justify-center w-full min-h-[300px] p-8 border-2 border-dashed rounded-xl transition-all duration-200 ease-in-out ${dragActive
+              ? "border-green-500 bg-black scale-[1.01]"
+              : "border-gray-300 bg-[#f4fde3] hover:bg-[#edfecd]"
+              }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleChange}
+              accept="image/*,application/pdf"
             />
+
+            <div className="flex flex-col items-center text-center space-y-4 pointer-events-none">
+              <div className={`p-4 rounded-full transition-colors ${dragActive ? 'bg-green-300' : 'bg-white shadow-sm'}`}>
+                <CloudUpload
+                  className={`w-12 h-12 ${dragActive ? 'text-blue-600' : 'text-gray-400'}`}
+                />
           </div>
 
           <div className="space-y-2">
@@ -190,6 +264,97 @@ export default function DragDropDemo() {
           <p className="text-xs text-gray-400 mt-4">
             Supported formats: PDF, JPG, PNG
           </p>
+        </div>
+      </div>
+        </div>
+
+        {/* Right side - Profile Menu */}
+        <div className="w-full md:w-72 bg-white border border-gray-200 rounded-xl p-4 space-y-4 h-fit">
+          <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Your Profile</h3>
+          
+          {/* Health Conditions */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Health Conditions</label>
+            <div className="flex flex-wrap gap-2">
+              {profileOptions.conditions.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => toggleCondition(opt.value)}
+                  className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                    profile.conditions.includes(opt.value)
+                      ? 'bg-lime-500 text-white border-lime-500'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-lime-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Allergies */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Allergies</label>
+            <div className="flex flex-wrap gap-2">
+              {profileOptions.allergies.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => toggleAllergy(opt.value)}
+                  className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                    profile.allergies.includes(opt.value)
+                      ? 'bg-red-500 text-white border-red-500'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-red-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Diet */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Diet</label>
+            <div className="flex flex-wrap gap-2">
+              {profileOptions.diets.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setProfile(prev => ({ ...prev, diet: opt.value }))}
+                  className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                    profile.diet === opt.value
+                      ? 'bg-green-500 text-white border-green-500'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-green-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Goal */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-2 block">Goal</label>
+            <div className="flex flex-wrap gap-2">
+              {profileOptions.goals.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setProfile(prev => ({ ...prev, goal: opt.value }))}
+                  className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                    profile.goal === opt.value
+                      ? 'bg-blue-500 text-white border-blue-500'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import multer from "multer";
 import bot from "./bot/index.js";
 import getPrescriptionFromAPI from "./routes/gemini.routes.js"
 import ttsRoutes from "./routes/tts.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
 
 const app = express();
 
@@ -47,5 +48,6 @@ app.use(bot.webhookCallback(bot.webhookPath));
 // application routes
 app.use("/", getPrescriptionFromAPI)
 app.use("/", ttsRoutes);
+app.use("/", profileRoutes);
 
 export default app;

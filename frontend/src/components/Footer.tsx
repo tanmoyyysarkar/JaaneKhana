@@ -58,11 +58,11 @@ export default function Footer() {
           transition={{ duration: 0.8, ease: [0.25, 0.4, 0.25, 1] }}
           className="text-center mb-12"
         >
-          <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-[0.9] overflow-hidden">
+          <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-tight">
             <motion.span
               className="block"
-              initial={{ y: 100 }}
-              whileInView={{ y: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1] }}
             >
@@ -70,12 +70,12 @@ export default function Footer() {
             </motion.span>
             <motion.span
               className="block text-[#AFFF00]"
-              initial={{ y: 100 }}
-              whileInView={{ y: 0 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: [0.25, 0.4, 0.25, 1], delay: 0.1 }}
             >
-              LEVEL UP?
+              LEVEL UP
             </motion.span>
           </h2>
         </motion.div>

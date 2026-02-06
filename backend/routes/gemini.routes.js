@@ -13,8 +13,19 @@ router.post("/api/gemini/upload", (req, res, next) => {
             return res.status(400).json({ error: 'Missing file upload. Send form-data with key "imagePath" and a PNG file.' });
         }
 
+        // Parse profile data if provided
+        let profileData = null;
+        if (req.body.profile) {
+            try {
+                profileData = JSON.parse(req.body.profile);
+                console.log("Profile data received:", profileData);
+            } catch (e) {
+                console.warn("Failed to parse profile data:", e);
+            }
+        }
+
         // Single API call - analyze food label directly
-        const result = await analyzeFoodLabel(req.file);
+        const result = await analyzeFoodLabel(req.file, profileData);
         console.log(result);
 
         return res.json({ analysis: result });

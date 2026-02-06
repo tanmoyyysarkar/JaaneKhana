@@ -8,6 +8,7 @@ const userProfileMap = new Map();
 
 export function saveUserProfile(userId, profile) {
     userProfileMap.set(userId, profile);
+    console.log(profile);
 }
 
 export function getUserProfile(userId) {

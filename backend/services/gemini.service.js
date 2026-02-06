@@ -169,13 +169,28 @@ Can the user eat this regularly, occasionally, or avoid it?
  * Single API call - Analyze food label image directly
  * No need for separate OCR + explanation for printed food labels
  */
-export async function analyzeFoodLabel(imagePath) {
+export async function analyzeFoodLabel(imagePath, profileData = null) {
+  /* ---------------- USER PROFILE BLOCK ---------------- */
+  const profileBlock = profileData
+    ? `
+USER PROFILE:
+Diet: ${profileData.diet || "not specified"}
+Health Conditions: ${profileData.conditions?.length ? profileData.conditions.join(", ") : "none specified"}
+Allergies: ${profileData.allergies?.length ? profileData.allergies.join(", ") : "none specified"}
+Goal: ${profileData.goal || "general health"}
+
+IMPORTANT: Personalize your analysis based on this user's profile. If they have specific conditions, allergies, or dietary preferences, focus on how this product specifically affects THEM.
+`
+    : "";
+
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: `
 You are JaaneKhana, an AI food copilot that helps consumers understand food ingredients.
 
 Analyze the food label image and provide a CONCISE but DETAILED analysis in PARAGRAPH format for smooth text-to-speech reading.
+
+${profileBlock}
 
 RULES:
 - NO introductions or greetings
@@ -185,6 +200,7 @@ RULES:
 - Keep response around 150-200 words
 - Be specific about health impacts
 - Use natural sentence transitions
+${profileData ? "- Address the user directly (use 'you' and 'your') when discussing their specific conditions/allergies" : ""}
 `,
     generationConfig: {
       responseMimeType: "text/plain",
@@ -193,7 +209,23 @@ RULES:
 
   const imagePart = await fileToGenerativePart(imagePath, "image/jpeg");
 
-  const prompt = `
+  const personalizedPrompt = profileData 
+    ? `
+Look at this food label image and provide a PERSONALIZED analysis for this user in PARAGRAPH format (no bullets) for TTS reading:
+
+${profileBlock}
+
+Paragraph 1: State the product name, then describe the main concerning ingredients and what they are.
+
+Paragraph 2: List any allergens present. If user has allergies listed, CLEARLY WARN them about matching allergens.
+
+Paragraph 3: Based on the user's specific health conditions (${profileData.conditions?.join(", ") || "none"}), explain if this product is safe for them, should be limited, or avoided. Be direct and specific.
+
+Paragraph 4: Considering their ${profileData.diet || "dietary"} preferences and ${profileData.goal || "health"} goal, give a personalized final verdict.
+
+Write naturally as if speaking directly to the user. No bullets, no dashes, just flowing sentences.
+`
+    : `
 Look at this food label image and provide analysis in PARAGRAPH format (no bullets) for TTS reading:
 
 Paragraph 1: State the product name, then describe the main concerning ingredients and what they are.
@@ -207,7 +239,7 @@ Paragraph 4: Give a final verdict - who can safely enjoy this, who should limit 
 Write naturally as if speaking to someone. No bullets, no dashes, just flowing sentences.
 `;
 
-  const result = await model.generateContent([prompt, imagePart]);
+  const result = await model.generateContent([personalizedPrompt, imagePart]);
 
   const text = result?.response?.text();
   if (!text) {

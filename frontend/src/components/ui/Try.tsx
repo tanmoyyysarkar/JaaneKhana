@@ -46,6 +46,10 @@ export default function DragDropDemo() {
     goal: '',
   });
 
+  // Marketing claims state
+  const [marketingClaims, setMarketingClaims] = useState<string | null>(null);
+  const [loadingClaims, setLoadingClaims] = useState(false);
+
   // Fetch profile options from backend on mount
   useEffect(() => {
     const fetchOptions = async () => {
@@ -197,6 +201,38 @@ export default function DragDropDemo() {
       alert(`Error: ${error instanceof Error ? error.message : 'Failed to analyze image'}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDetectMarketingClaims = async () => {
+    if (files.length === 0) {
+      alert("Please upload at least one file!");
+      return;
+    }
+
+    setLoadingClaims(true);
+    setMarketingClaims(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('imagePath', files[0]);
+
+      const response = await fetch('http://localhost:3000/api/gemini/marketing-claims', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setMarketingClaims(result.claims);
+    } catch (error) {
+      console.error("Error detecting marketing claims:", error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to detect marketing claims'}`);
+    } finally {
+      setLoadingClaims(false);
     }
   };
 
@@ -388,15 +424,43 @@ export default function DragDropDemo() {
             ))}
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-gray-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <Button
+              onClick={handleDetectMarketingClaims}
+              disabled={loadingClaims || loading}
+              variant="outline"
+              className="border-orange-400 text-orange-600 hover:bg-orange-50 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingClaims ? "Checking..." : "🔍 Check Claims"}
+            </Button>
             <Button
               onClick={handleSubmitAnalysis}
-              disabled={loading}
+              disabled={loading || loadingClaims}
               className="bg-blue-900 hover:bg-blue-800 text-white px-6 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Analyzing..." : "Submit Analysis"}
             </Button>
           </div>
+
+          {/* Marketing Claims Section */}
+          {marketingClaims && (
+            <div className="mt-6 p-6 bg-orange-50 border border-orange-200 rounded-xl shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-orange-200 pb-3">
+                <h3 className="text-lg font-semibold text-orange-800">🎯 Marketing Claim Check</h3>
+                <button
+                  onClick={() => setMarketingClaims(null)}
+                  className="text-orange-400 hover:text-orange-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="prose prose-sm max-w-none">
+                <p className="whitespace-pre-wrap text-sm text-gray-700 font-sans bg-white p-4 rounded-lg">
+                  {marketingClaims}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Analysis Result Section */}
           {analysisResult && (

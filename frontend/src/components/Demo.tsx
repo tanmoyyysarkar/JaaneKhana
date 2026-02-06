@@ -1,13 +1,13 @@
 export default function Demo() {
   return (
-    <section className="py-20 bg-white">
+    <section id="demo" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           {/* Left side - Mobile view */}
           <div className="flex justify-center md:justify-start">
             <div className="relative w-full max-w-xs">
               {/* Mobile phone frame */}
-              <div className="bg-black rounded-3xl shadow-2xl overflow-hidden border-8 border-black" style={{aspectRatio: '9/19.5'}}>
+              <div className="bg-black rounded-3xl shadow-2xl overflow-hidden border-8 border-black" style={{aspectRatio: '9/19'}}>
                 {/* Notch */}
                 <div className="absolute mt-3 left-1/2 transform -translate-x-1/2 bg-black rounded-full w-36 h-8 z-20"></div>
                 

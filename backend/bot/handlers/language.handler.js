@@ -5,8 +5,23 @@ const LANGUAGES = {
     en: "English",
     hi: "हिन्दी",
     bn: "বাংলা",
-    as: "অসমীয়া",
     ta: "தமிழ்",
+};
+
+// Translations for language handler messages
+const LANG_TRANSLATIONS = {
+    en: {
+        languageSet: "Language set to: English\n\nLet's set up your health profile.",
+    },
+    hi: {
+        languageSet: "भाषा चुनी गई: हिन्दी\n\nआइए आपकी स्वास्थ्य प्रोफ़ाइल बनाएं।",
+    },
+    bn: {
+        languageSet: "ভাষা নির্বাচিত: বাংলা\n\nআসুন আপনার স্বাস্থ্য প্রোফাইল তৈরি করি।",
+    },
+    ta: {
+        languageSet: "மொழி தேர்ந்தெடுக்கப்பட்டது: தமிழ்\n\nஉங்கள் சுகாதார சுயவிவரத்தை அமைப்போம்.",
+    },
 };
 
 const DEFAULT_LANG = "en";
@@ -55,10 +70,10 @@ const registerLanguageHandler = (bot) => {
 
         await ctx.answerCbQuery();
         await ctx.editMessageText(
-            `Language set to: ${LANGUAGES[langCode]}\n\nLet's set up your health profile.`
+            LANG_TRANSLATIONS[langCode]?.languageSet || LANG_TRANSLATIONS.en.languageSet
         );
 
-        await startProfileWizard(ctx);
+        await startProfileWizard(ctx, langCode);
     });
 }
 

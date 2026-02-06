@@ -12,7 +12,6 @@ const LANGUAGE_NAMES = {
   en: "English",
   hi: "Hindi",
   bn: "Bengali",
-  as: "Assamese",
   ta: "Tamil",
 };
 
@@ -109,18 +108,18 @@ LANGUAGE:
 Write the entire response in ${languageName} using native script.
 
 WRITING STYLE:
-No greetings.
-No bullet points.
-No markdown.
-Write smooth natural paragraphs for text-to-speech.
-150–180 words maximum.
+- No greetings or introductions
+- Use short bullet points
+- Plain text only, no markdown or special characters
+- Keep response concise (80-100 words total)
+- Each point should be 1 sentence max
 
 PERSONALIZATION RULES:
-Always tailor advice using the USER PROFILE.
-If allergies match ingredients → clearly warn.
-If health conditions conflict → strongly highlight risk.
-If diet conflicts → mention suitability.
-Relate final verdict to the user's goal.
+- Always tailor advice using the USER PROFILE
+- If allergies match ingredients → clearly warn
+- If health conditions conflict → strongly highlight risk
+- If diet conflicts → mention suitability
+- Relate final verdict to the user's goal
 `,
     generationConfig: {
       responseMimeType: "text/plain",
@@ -135,20 +134,14 @@ ${profileBlock}
 FOOD LABEL DATA:
 ${JSON.stringify(foodJson, null, 2)}
 
-Write 4 short paragraphs:
+Provide a brief analysis with these 4 points:
 
-Paragraph 1:
-Name the product and explain the most concerning ingredients and what they do to the body.
+1. Product name and most concerning ingredients
+2. Allergens (warn if matching user's allergies)
+3. Impact on user's health conditions
+4. Final verdict: eat regularly, occasionally, or avoid?
 
-Paragraph 2:
-Mention allergens clearly and warn if they match the user profile.
-
-Paragraph 3:
-Explain impact specifically for the user's health conditions.
-
-Paragraph 4:
-Give a final personalized verdict:
-Can the user eat this regularly, occasionally, or avoid it?
+Keep each point to 1-2 sentences. Be direct.
 `;
 
   try {
@@ -166,6 +159,75 @@ Can the user eat this regularly, occasionally, or avoid it?
 }
 
 /**
+ * MARKETING CLAIM DETECTOR
+ * Detects misleading marketing claims on food packaging
+ */
+export async function detectMarketingClaims(imagePath) {
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    systemInstruction: `
+You are a food marketing claim fact-checker. Your job is to identify MISLEADING or FALSE marketing claims on food packaging. ONLY report claims that are problematic - skip accurate/truthful claims.
+
+COMMON MISLEADING CLAIMS TO WATCH FOR:
+- "No added sugar" → may contain natural sugars, maltitol, or artificial sweeteners
+- "Natural" → may still contain processed ingredients
+- "High protein" → may have excessive sugar/sodium
+- "Immunity booster" → often unverified health claims
+- "Low fat" → may be high in sugar to compensate
+- "Sugar-free" → may contain sugar alcohols
+- "Whole grain" → may be mostly refined flour
+- "Light/Lite" → may only be slightly reduced
+- "Made with real fruit" → may have minimal fruit content
+- "Zero trans fat" → may have up to 0.5g per serving
+- "Heart healthy" → may still be high in sodium
+- "Organic" → doesn't mean healthy or low calorie
+
+OUTPUT FORMAT (plain text, no markdown):
+ONLY list misleading or false claims. Skip accurate claims entirely.
+
+For each problematic claim, output:
+
+CLAIM: [exact claim text]
+REALITY: [what the ingredients/nutrition actually show]
+VERDICT: [Misleading ⚠️ | False ✗]
+
+If all claims are accurate OR no claims found, say: "No misleading claims detected. This product's marketing appears truthful."
+`,
+    generationConfig: {
+      responseMimeType: "text/plain",
+    },
+  });
+
+  const imagePart = await fileToGenerativePart(imagePath, "image/jpeg");
+
+  const prompt = `
+Analyze this food product image for MISLEADING or FALSE marketing claims only.
+
+1. Identify all marketing claims visible on the packaging
+2. Check each claim against actual ingredients and nutrition facts
+3. ONLY report claims that are misleading or false - skip accurate ones
+
+Focus on claims like:
+- Health claims (immunity, energy, heart healthy)
+- Nutrition claims (high protein, low fat, sugar-free, no added sugar)
+- Quality claims (natural, organic, real ingredients, whole grain)
+- Diet claims (keto, vegan, gluten-free)
+
+Be specific about WHY a claim is misleading by referencing actual ingredients.
+Do NOT include claims that are accurate/truthful.
+`;
+
+  const result = await model.generateContent([prompt, imagePart]);
+
+  const text = result?.response?.text();
+  if (!text) {
+    throw new Error("Gemini returned empty response for marketing claims");
+  }
+
+  return text;
+}
+
+/**
  * Single API call - Analyze food label image directly
  * No need for separate OCR + explanation for printed food labels
  */
@@ -178,29 +240,22 @@ Diet: ${profileData.diet || "not specified"}
 Health Conditions: ${profileData.conditions?.length ? profileData.conditions.join(", ") : "none specified"}
 Allergies: ${profileData.allergies?.length ? profileData.allergies.join(", ") : "none specified"}
 Goal: ${profileData.goal || "general health"}
-
-IMPORTANT: Personalize your analysis based on this user's profile. If they have specific conditions, allergies, or dietary preferences, focus on how this product specifically affects THEM.
 `
     : "";
 
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: `
-You are JaaneKhana, an AI food copilot that helps consumers understand food ingredients.
-
-Analyze the food label image and provide a CONCISE but DETAILED analysis in PARAGRAPH format for smooth text-to-speech reading.
-
-${profileBlock}
+You are JaaneKhana, a concise food advisor. Give SHORT bullet points only.
 
 RULES:
-- NO introductions or greetings
-- NO bullet points or dashes
-- Write in flowing paragraphs
-- Plain text only, no markdown or special characters
-- Keep response around 150-200 words
-- Be specific about health impacts
-- Use natural sentence transitions
-${profileData ? "- Address the user directly (use 'you' and 'your') when discussing their specific conditions/allergies" : ""}
+- Maximum 8-10 bullet points total
+- Each point: 1 short sentence (max 15 words)
+- Don't use any bullet
+- NO paragraphs, NO introductions
+- Plain text only, no markdown
+- Be direct and actionable
+${profileData ? "- Address user directly with 'you'" : ""}
 `,
     generationConfig: {
       responseMimeType: "text/plain",
@@ -211,32 +266,38 @@ ${profileData ? "- Address the user directly (use 'you' and 'your') when discuss
 
   const personalizedPrompt = profileData 
     ? `
-Look at this food label image and provide a PERSONALIZED analysis for this user in PARAGRAPH format (no bullets) for TTS reading:
-
 ${profileBlock}
 
-Paragraph 1: State the product name, then describe the main concerning ingredients and what they are.
+Analyze this food label. Give exactly 8-10 SHORT bullet points:
 
-Paragraph 2: List any allergens present. If user has allergies listed, CLEARLY WARN them about matching allergens.
+• Product name + main concern
+• Key ingredients to note
+• Sugar/sodium content warning
+• Allergen warning if matches user profile
+• Impact on user's ${profileData.conditions?.length ? profileData.conditions[0] : 'health'}
+• Protein/fiber content (good or bad)
+• Additives or preservatives present
+• Portion size recommendation
+• Final verdict: eat regularly/occasionally/avoid
+• One-line tip for user
 
-Paragraph 3: Based on the user's specific health conditions (${profileData.conditions?.join(", ") || "none"}), explain if this product is safe for them, should be limited, or avoided. Be direct and specific.
-
-Paragraph 4: Considering their ${profileData.diet || "dietary"} preferences and ${profileData.goal || "health"} goal, give a personalized final verdict.
-
-Write naturally as if speaking directly to the user. No bullets, no dashes, just flowing sentences.
+Keep each bullet under 15 words. Be direct.
 `
     : `
-Look at this food label image and provide analysis in PARAGRAPH format (no bullets) for TTS reading:
+Analyze this food label. Give exactly 8-10 SHORT bullet points:
 
-Paragraph 1: State the product name, then describe the main concerning ingredients and what they are.
+• Product name + main concern
+• Key ingredients to note
+• Sugar/sodium content warning
+• Allergens present
+• Who should avoid this
+• Protein/fiber content (good or bad)
+• Additives or preservatives present
+• Portion size recommendation
+• Final verdict
+• One-line general tip
 
-Paragraph 2: List any allergens present in a sentence.
-
-Paragraph 3: Explain how this product affects people with common health conditions - diabetes, high blood pressure, low blood pressure, thyroid issues, and high cholesterol. Be specific about whether each group should eat it, use caution, or avoid it.
-
-Paragraph 4: Give a final verdict - who can safely enjoy this, who should limit it, and who should avoid it entirely.
-
-Write naturally as if speaking to someone. No bullets, no dashes, just flowing sentences.
+Keep each bullet under 15 words. Be direct.
 `;
 
   const result = await model.generateContent([personalizedPrompt, imagePart]);

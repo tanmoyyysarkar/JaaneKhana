@@ -6,6 +6,45 @@
 
 const userProfileMap = new Map();
 
+// Translations for profile wizard (option labels stay in English)
+const PROFILE_TRANSLATIONS = {
+    en: {
+        selectDiet: "Select your diet:",
+        selectConditions: "Select health conditions:",
+        selectAllergies: "Select food allergies:",
+        selectGoal: "What is your goal?",
+        profileSaved: "✅ Profile saved! You can now send food label images.",
+        done: "DONE ✅",
+    },
+    hi: {
+        selectDiet: "अपना आहार चुनें:",
+        selectConditions: "स्वास्थ्य समस्याएं चुनें:",
+        selectAllergies: "खाद्य एलर्जी चुनें:",
+        selectGoal: "आपका लक्ष्य क्या है?",
+        profileSaved: "✅ प्रोफ़ाइल सहेजी गई! अब आप फ़ूड लेबल की फ़ोटो भेज सकते हैं।",
+        done: "पूर्ण ✅",
+    },
+    bn: {
+        selectDiet: "আপনার খাদ্যাভ্যাস নির্বাচন করুন:",
+        selectConditions: "স্বাস্থ্য সমস্যা নির্বাচন করুন:",
+        selectAllergies: "খাদ্য এলার্জি নির্বাচন করুন:",
+        selectGoal: "আপনার লক্ষ্য কী?",
+        profileSaved: "✅ প্রোফাইল সংরক্ষিত! এখন আপনি খাদ্য লেবেলের ছবি পাঠাতে পারেন।",
+        done: "সম্পন্ন ✅",
+    },
+    ta: {
+        selectDiet: "உங்கள் உணவு முறையை தேர்ந்தெடுக்கவும்:",
+        selectConditions: "சுகாதார நிலைகளை தேர்ந்தெடுக்கவும்:",
+        selectAllergies: "உணவு ஒவ்வாமைகளை தேர்ந்தெடுக்கவும்:",
+        selectGoal: "உங்கள் இலக்கு என்ன?",
+        profileSaved: "✅ சுயவிவரம் சேமிக்கப்பட்டது! இப்போது உணவு லேபிள் படங்களை அனுப்பலாம்.",
+        done: "முடிந்தது ✅",
+    },
+};
+
+// Helper to get translation
+const pt = (lang, key) => PROFILE_TRANSLATIONS[lang]?.[key] || PROFILE_TRANSLATIONS.en[key];
+
 export function saveUserProfile(userId, profile) {
     userProfileMap.set(userId, profile);
     console.log(profile);
@@ -24,8 +63,8 @@ export function hasUserProfile(userId) {
 /* Inline keyboard builders                         */
 /* ------------------------------------------------ */
 
-async function askDiet(ctx) {
-    await ctx.reply("Select your diet:", {
+async function askDiet(ctx, lang = "en") {
+    await ctx.reply(pt(lang, "selectDiet"), {
         reply_markup: {
             inline_keyboard: [
                 [{ text: "Vegetarian", callback_data: "diet_vegetarian" }],
@@ -36,7 +75,7 @@ async function askDiet(ctx) {
     });
 }
 
-async function askConditions(ctx) {
+async function askConditions(ctx, lang = "en") {
     const selected = ctx.session.tempProfile.conditions || [];
 
     const options = [
@@ -47,14 +86,14 @@ async function askConditions(ctx) {
     ];
 
     await ctx.editMessageText(
-        "Select health conditions:",
+        pt(lang, "selectConditions"),
         {
             reply_markup: {
                 inline_keyboard: buildMultiSelectKeyboard(
                     options,
                     selected,
                     "cond_",
-                    "DONE ✅"
+                    pt(lang, "done")
                 ),
             },
         }
@@ -63,7 +102,7 @@ async function askConditions(ctx) {
 
 
 
-async function askAllergies(ctx) {
+async function askAllergies(ctx, lang = "en") {
     const selected = ctx.session.tempProfile.allergies || [];
 
     const options = [
@@ -74,22 +113,22 @@ async function askAllergies(ctx) {
     ];
 
     await ctx.editMessageText(
-        "Select food allergies:",
+        pt(lang, "selectAllergies"),
         {
             reply_markup: {
                 inline_keyboard: buildMultiSelectKeyboard(
                     options,
                     selected,
                     "allergy_",
-                    "DONE ✅"
+                    pt(lang, "done")
                 ),
             },
         }
     );
 }
 
-async function askGoal(ctx) {
-    await ctx.editMessageText("What is your goal?", {
+async function askGoal(ctx, lang = "en") {
+    await ctx.editMessageText(pt(lang, "selectGoal"), {
         reply_markup: {
             inline_keyboard: [
                 [{ text: "Healthy eating", callback_data: "goal_health" }],
@@ -111,14 +150,15 @@ function buildMultiSelectKeyboard(options, selected, prefix, doneLabel) {
 /* Wizard launcher (called after language selection)*/
 /* ------------------------------------------------ */
 
-export async function startProfileWizard(ctx) {
+export async function startProfileWizard(ctx, lang = "en") {
     if (!ctx.session) ctx.session = {}
     ctx.session.profileStep = "diet";
+    ctx.session.profileLang = lang; // Store language for wizard
     ctx.session.tempProfile = {
         conditions: [],
         allergies: [],
     };
-    await askDiet(ctx);
+    await askDiet(ctx, lang);
 }
 
 
@@ -130,7 +170,8 @@ const registerProfileHandler = (bot) => {
 
     // manual command to edit profile later
     bot.command("profile", async (ctx) => {
-        await startProfileWizard(ctx);
+        const lang = ctx.session?.profileLang || "en";
+        await startProfileWizard(ctx, lang);
     });
 
     // handle ONLY wizard buttons
@@ -146,12 +187,13 @@ const registerProfileHandler = (bot) => {
         await ctx.answerCbQuery();
 
         const step = ctx.session.profileStep;
+        const lang = ctx.session.profileLang || "en";
 
         /* ---- STEP 1: DIET ---- */
         if (step === "diet" && data.startsWith("diet_")) {
             ctx.session.tempProfile.diet = data.replace("diet_", "");
             ctx.session.profileStep = "conditions";
-            return askConditions(ctx);
+            return askConditions(ctx, lang);
         }
 
         /* ---- STEP 2: CONDITIONS ---- */
@@ -159,7 +201,7 @@ const registerProfileHandler = (bot) => {
 
             if (data === "cond_done") {
                 ctx.session.profileStep = "allergies";
-                return askAllergies(ctx);
+                return askAllergies(ctx, lang);
             }
 
             const value = data.replace("cond_", "");
@@ -169,7 +211,7 @@ const registerProfileHandler = (bot) => {
             if (index > -1) arr.splice(index, 1);
             else arr.push(value);
 
-            return askConditions(ctx);
+            return askConditions(ctx, lang);
         }
 
 
@@ -179,7 +221,7 @@ const registerProfileHandler = (bot) => {
 
             if (data === "allergy_done") {
                 ctx.session.profileStep = "goal";
-                return askGoal(ctx);
+                return askGoal(ctx, lang);
             }
 
             const value = data.replace("allergy_", "");
@@ -189,7 +231,7 @@ const registerProfileHandler = (bot) => {
             if (index > -1) arr.splice(index, 1);
             else arr.push(value);
 
-            return askAllergies(ctx);
+            return askAllergies(ctx, lang);
         }
 
 
@@ -202,9 +244,7 @@ const registerProfileHandler = (bot) => {
             ctx.session.profileStep = null;
             ctx.session.tempProfile = null;
 
-            return ctx.editMessageText(
-                "Profile saved. You can now send food label images."
-            );
+            return ctx.editMessageText(pt(lang, "profileSaved"));
         }
     });
 };

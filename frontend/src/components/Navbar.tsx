@@ -26,8 +26,7 @@ export default function Navbar() {
 
   const navLinks = [
     { label: "Home", href: "#hero" },
-    { label: "Creators", href: "#creators" },
-    { label: "Distributors", href: "#distributors" },
+    { label: "Creators", href: "https://github.com/tanmoyyysarkar/JaaneKhana", external: true },
     { label: "Careers", href: "#careers" },
   ]
 
@@ -65,15 +64,29 @@ export default function Navbar() {
           {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => scrollToSection(item.href)}
-                className={`text-sm font-medium ${
-                  scrolled ? "text-white/80" : "text-[#121212]/80"
-                }`}
-              >
-                {item.label}
-              </button>
+              item.external ? (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`text-sm font-medium cursor-pointer ${
+                    scrolled ? "text-white/80" : "text-[#121212]/80"
+                  }`}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <button
+                  key={item.label}
+                  onClick={() => scrollToSection(item.href)}
+                  className={`text-sm font-medium cursor-pointer ${
+                    scrolled ? "text-white/80" : "text-[#121212]/80"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              )
             ))}
           </div>
 
@@ -84,16 +97,21 @@ export default function Navbar() {
               className="bg-[#AFFF00] text-[#121212] px-6 py-2.5 rounded-full font-bold text-sm relative overflow-hidden"
             >
               <motion.div
-                className="absolute inset-0 bg-white/30"
+                className="absolute inset-0 cursor-pointer bg-white/30"
                 animate={ctaAnimation}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              <span className="relative z-10">Try Now</span>
+              <span className="relative z-10 cursor-pointer">Try Now</span>
             </motion.button>
 
-            <motion.button className="bg-[#AFFF00] text-[#121212] px-6 py-2.5 rounded-full font-bold text-sm">
-              Get 25% Off
-            </motion.button>
+            <motion.a
+              href="https://t.me/MedEase_bot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#AFFF00] text-[#121212] px-6 py-2.5 rounded-full font-bold text-sm inline-block"
+            >
+              Go to Bot
+            </motion.a>
           </div>
 
           {/* Mobile Menu Button */}

@@ -147,6 +147,10 @@ export default function Hero() {
                 className="border-2 border-black text-black px-6 py-3 rounded-full font-bold text-sm tracking-wide relative overflow-hidden"
                 whileHover={{ scale: 1.02, backgroundColor: "#000", color: "#bef264" }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  const demoSection = document.querySelector('#demo');
+                  if (demoSection) demoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
               >
                 Watch Demo
               </motion.button>

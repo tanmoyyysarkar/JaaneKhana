@@ -1,5 +1,5 @@
 import express from "express";
-import { analyzeFoodLabel } from "../services/gemini.service.js";
+import { analyzeFoodLabel, detectMarketingClaims } from "../services/gemini.service.js";
 const router = express.Router();
 
 // route with multer middleware to handle file upload
@@ -32,6 +32,26 @@ router.post("/api/gemini/upload", (req, res, next) => {
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: err.message || 'Failed to analyze food label' });
+    }
+});
+
+// Marketing Claims Detector endpoint
+router.post("/api/gemini/marketing-claims", (req, res, next) => {
+    req.app.locals.upload.single('imagePath')(req, res, next);
+}, async (req, res) => {
+    console.log("marketing claims api called");
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Missing file upload. Send form-data with key "imagePath".' });
+        }
+
+        const result = await detectMarketingClaims(req.file);
+        console.log(result);
+
+        return res.json({ claims: result });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: err.message || 'Failed to detect marketing claims' });
     }
 });
 

@@ -91,7 +91,35 @@ export default function DragDropDemo() {
       console.log("Analysis Result:", result);
 
       // Handle the new response format { analysis: "..." }
-      setAnalysisResult(result.analysis || result);
+      const analysisText = result.analysis || result;
+      setAnalysisResult(analysisText);
+
+      // Fetch TTS audio for the analysis result
+      try {
+        const text = typeof analysisText === 'string'
+          ? analysisText
+          : JSON.stringify(analysisText, null, 2);
+
+        const ttsResp = await fetch('http://localhost:3000/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+
+        if (ttsResp.ok) {
+          const ttsData = await ttsResp.json();
+          if (ttsData?.url) {
+            setAudioUrl(ttsData.url);
+            if (!audioRef.current) {
+              audioRef.current = new Audio(ttsData.url);
+            } else {
+              audioRef.current.src = ttsData.url;
+            }
+          }
+        }
+      } catch (ttsError) {
+        console.error('TTS fetch failed:', ttsError);
+      }
 
     } catch (error) {
       console.error("Error during analysis:", error);
@@ -210,47 +238,19 @@ export default function DragDropDemo() {
             <div className="mt-6 p-6 bg-white border border-blue-200 rounded-xl shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-gray-200 pb-3">
                 <h3 className="text-lg font-semibold text-blue-900">Analysis Result</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-blue-200 text-blue-900 hover:bg-blue-50 flex items-center gap-2"
-                  onClick={async () => {
-                    try {
-                      if (audioUrl) {
-                        audioRef.current?.play();
-                        return;
-                      }
-
-                      const text = typeof analysisResult === 'string'
-                        ? analysisResult
-                        : JSON.stringify(analysisResult, null, 2);
-
-                      const resp = await fetch('http://localhost:3000/api/tts', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text }),
-                      });
-
-                      if (!resp.ok) throw new Error(`TTS request failed: ${resp.status}`);
-                      const data = await resp.json();
-                      if (!data?.url) throw new Error('No audio URL returned');
-
-                      setAudioUrl(data.url);
-                      if (!audioRef.current) {
-                        audioRef.current = new Audio(data.url);
-                      } else {
-                        audioRef.current.src = data.url;
-                      }
-                      await audioRef.current.play();
-                    } catch (e) {
-                      console.error('Play audio failed', e);
-                      alert(`Play audio failed: ${e instanceof Error ? e.message : String(e)}`);
-                    }
-                  }}
-                >
-                  <Volume2 className="w-4 h-4" />
-                  Play Audio
-                </Button>
+                {audioUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-200 text-blue-900 hover:bg-blue-50 flex items-center gap-2"
+                    onClick={() => {
+                      audioRef.current?.play();
+                    }}
+                  >
+                    <Volume2 className="w-4 h-4" />
+                    Play Audio
+                  </Button>
+                )}
                 <audio ref={(el) => { if (el) audioRef.current = el; }} style={{ display: 'none' }} />
               </div>
 

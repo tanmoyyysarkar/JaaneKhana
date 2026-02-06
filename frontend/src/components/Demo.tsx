@@ -34,9 +34,8 @@ export default function Demo() {
                  See It In Action
                </h2>
               <p className="text-gray-700 text-lg leading-relaxed">
-                Experience the seamless interface of MedEase. Get instant medical guidance, 
-                track your health metrics, and connect with AI-powered health recommendations 
-                all in one intuitive platform.
+                Experience the seamless interface of JaaneKhana. Get instant food insights,
+                understand nutrition labels, and connect with AI-powered food recommendations
               </p>
             </div>
 
@@ -48,8 +47,8 @@ export default function Demo() {
                    </div>
                  </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Quick Diagnosis</h3>
-                  <p className="text-gray-600 mt-1">Upload symptoms and get instant AI analysis in seconds</p>
+                  <h3 className="text-xl font-semibold text-gray-900">Quick Scan</h3>
+                  <p className="text-gray-600 mt-1">Upload food labels and get instant AI analysis in seconds</p>
                 </div>
               </div>
 
@@ -60,8 +59,8 @@ export default function Demo() {
                    </div>
                  </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Health Tracking</h3>
-                  <p className="text-gray-600 mt-1">Monitor vitals and get personalized health insights</p>
+                  <h3 className="text-xl font-semibold text-gray-900">Nutrition Tracking</h3>
+                  <p className="text-gray-600 mt-1">Monitor ingredients and get personalized nutrition insights</p>
                 </div>
               </div>
 
@@ -73,7 +72,7 @@ export default function Demo() {
                  </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">24/7 Support</h3>
-                  <p className="text-gray-600 mt-1">Access your AI doctor anytime, anywhere on any device</p>
+                  <p className="text-gray-600 mt-1">Access your AI food assistant anytime, anywhere on any device</p>
                 </div>
               </div>
             </div>

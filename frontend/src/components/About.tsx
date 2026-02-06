@@ -8,7 +8,7 @@ export default function About() {
             Powerful Features
           </h2>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Everything you need for better health management in one intelligent platform
+            Everything you need to understand your food in one intelligent platform
           </p>
         </div>
 
@@ -22,10 +22,10 @@ export default function About() {
               </svg>
             </div>
             <h3 className="text-2xl font-bold text-black mb-3">
-              Prescription Analysis
+              Food Label Analysis
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Upload your prescriptions and get instant AI-powered analysis. Our smart system decodes medications, dosages, and provides personalized insights about your treatment plan.
+              Upload food labels and get instant AI-powered analysis. Our smart system decodes ingredients, nutrition facts, and provides personalized insights about what you eat.
             </p>
           </div>
 
@@ -40,7 +40,7 @@ export default function About() {
               Voice Reply Support
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Get responses in natural, conversational voice. Ask health questions and receive clear audio explanations from your AI doctor, making healthcare more accessible and personal.
+              Get responses in natural, conversational voice. Ask food questions and receive clear audio explanations, making nutrition info more accessible and personal.
             </p>
           </div>
 
@@ -52,10 +52,10 @@ export default function About() {
               </svg>
             </div>
             <h3 className="text-2xl font-bold text-black mb-3">
-              Smart Reminders
+              Personalized Results
             </h3>
             <p className="text-gray-600 leading-relaxed">
-              Never miss a medication or appointment. Get intelligent reminders tailored to your schedule, with customizable notifications to keep you on track with your health goals.
+              Never miss dietary goals. Get intelligent suggestions tailored to your preferences, helping you stay on track with your nutrition goals.
             </p>
           </div>
         </div>

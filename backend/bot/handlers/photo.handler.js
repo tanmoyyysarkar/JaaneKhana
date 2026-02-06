@@ -8,13 +8,13 @@ import {
 import {
   extractPrescription,
   getDetailsFromData,
-  generateSpeechFromText,
 } from "../../services/gemini.service.js";
 import { generateTTS } from "../../services/tts.service.js";
 import {
   ensureLanguageSelected,
   getUserLanguage,
 } from "./language.handler.js";
+import { hasUserProfile, getUserProfile } from "./profile.handler.js";
 
 /**
  * Registers photo handler for the bot
@@ -24,6 +24,11 @@ const registerPhotoHandler = (bot) => {
     // 1. Ensure language is selected
     const ok = await ensureLanguageSelected(ctx);
     if (!ok) return;
+
+    if (!hasUserProfile(ctx.from.id)) {
+      await ctx.reply("Please complete your profile first using /start");
+      return;
+    }
 
     // 2. Prevent concurrent processing per user
     if (ctx.session?.isProcessing) {
@@ -50,11 +55,14 @@ async function processPrescription(ctx) {
   const photo = ctx.message.photo.at(-1);
 
   const uploadsDir = path.resolve(process.cwd(), "uploads");
-  const imagePath = path.join(uploadsDir, `${photo.file_id}.jpg`);
+  const imagePath = path.join(
+    uploadsDir,
+    `${ctx.from.id}_${photo.file_id}.jpg`
+  );
   let audioPath = null;
 
   try {
-    await ctx.reply(`🔍 Analyzing prescription (${lang.toUpperCase()})...`);
+    await ctx.reply(`🔍 Analyzing Food Label (${lang.toUpperCase()})...`);
 
     // Ensure uploads directory exists
     if (!fs.existsSync(uploadsDir)) {
@@ -67,8 +75,10 @@ async function processPrescription(ctx) {
     // 2. Extract structured data (OCR + JSON)
     const prescriptionData = await extractPrescription(imagePath);
 
+    const profileData = getUserProfile(ctx.from.id);
+
     // 3. Generate medical explanation (text)
-    const medicalAdvice = await getDetailsFromData(prescriptionData, lang);
+    const medicalAdvice = await getDetailsFromData(prescriptionData, profileData, lang);
 
     // 4. Send text response
     await ctx.reply(
@@ -79,21 +89,12 @@ async function processPrescription(ctx) {
     // 5. Generate voice (Edge TTS)
     await ctx.sendChatAction("record_voice");
     try {
-      audioPath = await generateTTS(medicalAdvice, "advice.mp3", lang);
+      const uniqueId = `${ctx.from.id}_${Date.now()}`;
+      const audioFileName = `advice_${uniqueId}.mp3`;
+
+      audioPath = await generateTTS(medicalAdvice, audioFileName, lang);
     } catch (ttsErr) {
-      console.warn("Edge TTS failed, falling back to Gemini TTS:", ttsErr);
-      try {
-        audioPath = await generateSpeechFromText(
-          medicalAdvice,
-          `advice_${Date.now()}.wav`
-        );
-      } catch (geminiTtsErr) {
-        console.error("Gemini TTS fallback failed:", geminiTtsErr);
-        await ctx.reply(
-          "⚠️ I generated the text summary, but audio generation failed right now. Please try again in a moment."
-        );
-        audioPath = null;
-      }
+      console.warn("Edge TTS failed", ttsErr);
     }
 
     // 6. Send audio

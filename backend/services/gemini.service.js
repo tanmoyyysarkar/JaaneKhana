@@ -30,18 +30,11 @@ export async function extractPrescription(imagePath) {
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash-lite",
     systemInstruction: `
-You are JaaneKhana, an AI food ingredient analysis assistant.
+Extract structured food label data from the image.
 
-TASK:
-- Extract ALL ingredients and nutrition information visible on the food label image.
-- Identify each ingredient and categorize it (natural, additive, preservative, sweetener, coloring, flavor, emulsifier, other).
-- Assess concern level for each ingredient (safe, moderate, caution, avoid, unknown).
-- Identify allergens present in the product.
-- Extract key nutrition highlights if visible.
-- Output MUST be valid JSON following the provided schema.
-- Do NOT guess information not visible in the image.
-- If a field is unclear or missing, set it to null.
-- Do NOT include explanations, comments, or extra text outside JSON.
+Return ONLY valid JSON following the schema.
+Use only visible information.
+Do not guess or add explanations.
 `,
     generationConfig: {
       responseMimeType: "application/json",
@@ -82,8 +75,9 @@ Use only information visible in the image.
  * STEP 2
  * Generate human-readable explanation from extracted food data
  */
-export async function getDetailsFromData(foodJson, lang = "en", attempt = 1) {
-  // Back-compat: older calls passed (foodJson, attempt)
+
+export async function getDetailsFromData(foodJson, profileData, lang = "en", attempt = 1) {
+
   if (typeof lang === "number") {
     attempt = lang;
     lang = "en";
@@ -92,46 +86,69 @@ export async function getDetailsFromData(foodJson, lang = "en", attempt = 1) {
   const langCode = normalizeLang(lang);
   const languageName = LANGUAGE_NAMES[langCode] || "English";
 
+  /* ---------------- USER PROFILE BLOCK ---------------- */
+
+  const profileBlock = profileData
+    ? `
+USER PROFILE:
+Diet: ${profileData.diet || "unknown"}
+Health Conditions: ${profileData.conditions?.join(", ") || "none"}
+Allergies: ${profileData.allergies?.join(", ") || "none"}
+Goal: ${profileData.goal || "general health"}
+`
+    : `USER PROFILE: Not provided`;
+
+  /* ---------------- SYSTEM INSTRUCTION ---------------- */
+
   const model = genAI.getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: `
-You are JaaneKhana. Give CONCISE but DETAILED food ingredient analysis in PARAGRAPH format for smooth text-to-speech reading.
+You are JaaneKhana, an AI food copilot that explains food labels in a personalized way.
 
-OUTPUT LANGUAGE:
-- Write the entire response in ${languageName}.
-- Use the native script for ${languageName} (do not transliterate to Latin/English letters).
-- Do not mix languages.
+LANGUAGE:
+Write the entire response in ${languageName} using native script.
 
-RULES:
-- NO introductions or greetings
-- NO bullet points or dashes
-- Write in flowing paragraphs
-- Plain text only, no markdown or special characters
-- Keep response around 150-200 words
-- Be specific about health impacts
-- Use natural sentence transitions
+WRITING STYLE:
+No greetings.
+No bullet points.
+No markdown.
+Write smooth natural paragraphs for text-to-speech.
+150–180 words maximum.
+
+PERSONALIZATION RULES:
+Always tailor advice using the USER PROFILE.
+If allergies match ingredients → clearly warn.
+If health conditions conflict → strongly highlight risk.
+If diet conflicts → mention suitability.
+Relate final verdict to the user's goal.
 `,
     generationConfig: {
       responseMimeType: "text/plain",
     },
   });
 
+  /* ---------------- MAIN PROMPT ---------------- */
+
   const prompt = `
-Analyze this food product in PARAGRAPH format (no bullets) for TTS reading.
-Write in ${languageName} only.
+${profileBlock}
 
-Paragraph 1: State the product name, then describe the main concerning ingredients and what they are.
-
-Paragraph 2: List any allergens present in a sentence.
-
-Paragraph 3: Explain how this product affects people with common health conditions - diabetes, high blood pressure, low blood pressure, thyroid issues, and high cholesterol. Be specific about whether each group should eat it, use caution, or avoid it.
-
-Paragraph 4: Give a final verdict - who can safely enjoy this, who should limit it, and who should avoid it entirely.
-
-Write naturally as if speaking to someone. No bullets, no dashes, just flowing sentences.
-
-Data:
+FOOD LABEL DATA:
 ${JSON.stringify(foodJson, null, 2)}
+
+Write 4 short paragraphs:
+
+Paragraph 1:
+Name the product and explain the most concerning ingredients and what they do to the body.
+
+Paragraph 2:
+Mention allergens clearly and warn if they match the user profile.
+
+Paragraph 3:
+Explain impact specifically for the user's health conditions.
+
+Paragraph 4:
+Give a final personalized verdict:
+Can the user eat this regularly, occasionally, or avoid it?
 `;
 
   try {
@@ -140,10 +157,9 @@ ${JSON.stringify(foodJson, null, 2)}
     if (!text) throw new Error("Empty explanation response");
     return text;
   } catch (error) {
-    // Retry once on Google overload
     if (error?.status === 503 && attempt < 2) {
       await new Promise((r) => setTimeout(r, 2000));
-      return getDetailsFromData(foodJson, attempt + 1);
+      return getDetailsFromData(foodJson, profileData, lang, attempt + 1);
     }
     throw error;
   }

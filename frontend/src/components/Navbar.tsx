@@ -24,12 +24,6 @@ export default function Navbar() {
     setMobileMenuOpen(false)
   }
 
-  const navLinks = [
-    { label: "Home", href: "#hero" },
-    { label: "Creators", href: "https://github.com/tanmoyyysarkar/JaaneKhana", external: true },
-    { label: "Careers", href: "#careers" },
-  ]
-
   const ctaAnimation = {
     boxShadow: [
       "0 0 20px rgba(175,255,0,0.3)",
@@ -60,35 +54,6 @@ export default function Navbar() {
               <span className="text-[#AFFF00]">Khaana</span>
             </span>
           </a>
-
-          {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((item) => (
-              item.external ? (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`text-sm font-medium cursor-pointer ${
-                    scrolled ? "text-white/80" : "text-[#121212]/80"
-                  }`}
-                >
-                  {item.label}
-                </a>
-              ) : (
-                <button
-                  key={item.label}
-                  onClick={() => scrollToSection(item.href)}
-                  className={`text-sm font-medium cursor-pointer ${
-                    scrolled ? "text-white/80" : "text-[#121212]/80"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              )
-            ))}
-          </div>
 
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-4">
@@ -126,7 +91,7 @@ export default function Navbar() {
         {/* Mobile Menu */}
         <AnimatePresence>
           {mobileMenuOpen && (
-            <div className="md:hidden bg-[#121212]/95 px-6 py-4">
+            <div className="md:hidden px-6 py-4">
               <button
                 onClick={openTryNow}
                 className="w-full bg-[#AFFF00] text-[#121212] px-6 py-3 rounded-full font-bold"

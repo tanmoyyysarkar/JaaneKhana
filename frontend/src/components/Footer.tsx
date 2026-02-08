@@ -1,5 +1,6 @@
 import { motion, useInView } from "framer-motion"
 import { useState, useRef } from "react"
+import { useExplain } from "@/context/ExplainContext"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -26,6 +27,7 @@ const itemVariants = {
 
 export default function Footer() {
   const [isHovering, setIsHovering] = useState(false)
+  const { openExplain } = useExplain()
   const footerRef = useRef(null)
   const isInView = useInView(footerRef, { once: true, margin: "-100px" })
 
@@ -144,6 +146,7 @@ export default function Footer() {
             className="text-white/30 font-mono text-xs cursor-pointer"
             onHoverStart={() => setIsHovering(true)}
             onHoverEnd={() => setIsHovering(false)}
+            onClick={openExplain}
             animate={
               isHovering
                 ? {
@@ -158,9 +161,9 @@ export default function Footer() {
                   }
             }
             transition={{ duration: 0.5 }}
-          >
-            made with energy
-          </motion.p>
+           >
+            explain this site 
+           </motion.p>
         </motion.div>
       </div>
     </footer>
